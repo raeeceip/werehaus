@@ -1,6 +1,6 @@
 // src/lib/api.js
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = 'http://localhost:3000/api';
 
 // User authentication
 export async function login(username, password) {
