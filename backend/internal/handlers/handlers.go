@@ -1,232 +1,240 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 
 	"go-warehouse-management/internal/database"
 	"go-warehouse-management/internal/models"
 
-	"github.com/go-chi/chi/v5"
+	"github.com/gin-gonic/gin"
 )
 
-func LoginHandler(w http.ResponseWriter, r *http.Request) {
-	// Implement login logic
+func LoginHandler(c *gin.Context) {
+	// TODO: Implement login logic
+	c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
 }
 
-func LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	// Implement logout logic
+func LogoutHandler(c *gin.Context) {
+	// TODO: Implement logout logic
+	c.JSON(http.StatusOK, gin.H{"message": "Logout successful"})
 }
 
-func GetItemsHandler(w http.ResponseWriter, r *http.Request) {
-	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
-	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	search := r.URL.Query().Get("search")
+func GetItemsHandler(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	search := c.Query("search")
 
-	items, err := database.GetItems(page, limit, search)
+	items, total, err := database.GetItems(page, limit, search)
 	if err != nil {
-		http.Error(w, "Error fetching items", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching items"})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(items)
+	c.JSON(http.StatusOK, gin.H{"items": items, "total": total})
 }
 
-func CreateItemHandler(w http.ResponseWriter, r *http.Request) {
+func CreateItemHandler(c *gin.Context) {
 	var item models.Item
-	err := json.NewDecoder(r.Body).Decode(&item)
-	if err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&item); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	err = database.CreateItem(&item)
-	if err != nil {
-		http.Error(w, "Error creating item", http.StatusInternalServerError)
+	if err := database.CreateItem(&item); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating item"})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(item)
+	c.JSON(http.StatusCreated, item)
 }
 
-func UpdateItemHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+func UpdateItemHandler(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
 	var item models.Item
-	err := json.NewDecoder(r.Body).Decode(&item)
-	if err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&item); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	item.ID = id
-	err = database.UpdateItem(&item)
-	if err != nil {
-		http.Error(w, "Error updating item", http.StatusInternalServerError)
+	item.ID = uint(id)
+	if err := database.UpdateItem(&item); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error updating item"})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(item)
+	c.JSON(http.StatusOK, item)
 }
 
-func DeleteItemHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	err := database.DeleteItem(id)
+func DeleteItemHandler(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		http.Error(w, "Error deleting item", http.StatusInternalServerError)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	if err := database.DeleteItem(uint(id)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error deleting item"})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }
 
-func GetLocationsHandler(w http.ResponseWriter, r *http.Request) {
+func GetLocationsHandler(c *gin.Context) {
 	locations, err := database.GetLocations()
 	if err != nil {
-		http.Error(w, "Error fetching locations", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching locations"})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(locations)
+	c.JSON(http.StatusOK, locations)
 }
 
-func CreateLocationHandler(w http.ResponseWriter, r *http.Request) {
+func CreateLocationHandler(c *gin.Context) {
 	var location models.Location
-	err := json.NewDecoder(r.Body).Decode(&location)
-	if err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&location); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	err = database.CreateLocation(&location)
-	if err != nil {
-		http.Error(w, "Error creating location", http.StatusInternalServerError)
+	if err := database.CreateLocation(&location); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating location"})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(location)
+	c.JSON(http.StatusCreated, location)
 }
 
-func UpdateLocationHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+func UpdateLocationHandler(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
 	var location models.Location
-	err := json.NewDecoder(r.Body).Decode(&location)
-	if err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&location); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	location.ID = id
-	err = database.UpdateLocation(&location)
-	if err != nil {
-		http.Error(w, "Error updating location", http.StatusInternalServerError)
+	location.ID = uint(id)
+	if err := database.UpdateLocation(&location); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error updating location"})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(location)
+	c.JSON(http.StatusOK, location)
 }
 
-func DeleteLocationHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	err := database.DeleteLocation(id)
+func DeleteLocationHandler(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		http.Error(w, "Error deleting location", http.StatusInternalServerError)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	if err := database.DeleteLocation(uint(id)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error deleting location"})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }
 
-func RequestIssueHandler(w http.ResponseWriter, r *http.Request) {
+func RequestIssueHandler(c *gin.Context) {
 	var issue models.Issue
-	err := json.NewDecoder(r.Body).Decode(&issue)
-	if err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&issue); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	err = database.CreateIssue(&issue)
-	if err != nil {
-		http.Error(w, "Error creating issue", http.StatusInternalServerError)
+	if err := database.CreateIssue(&issue); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating issue"})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(issue)
+	c.JSON(http.StatusCreated, issue)
 }
 
-func GetPendingIssuesHandler(w http.ResponseWriter, r *http.Request) {
+func GetPendingIssuesHandler(c *gin.Context) {
 	issues, err := database.GetPendingIssues()
 	if err != nil {
-		http.Error(w, "Error fetching pending issues", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching pending issues"})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(issues)
+	c.JSON(http.StatusOK, issues)
 }
 
-func ApproveIssueHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	err := database.ApproveIssue(id)
+func ApproveIssueHandler(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		http.Error(w, "Error approving issue", http.StatusInternalServerError)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	if err := database.ApproveIssue(uint(id)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error approving issue"})
+		return
+	}
+
+	c.Status(http.StatusOK)
 }
 
-func DenyIssueHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	err := database.DenyIssue(id)
+func DenyIssueHandler(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		http.Error(w, "Error denying issue", http.StatusInternalServerError)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	if err := database.DenyIssue(uint(id)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error denying issue"})
+		return
+	}
+
+	c.Status(http.StatusOK)
 }
 
-func InventoryReportHandler(w http.ResponseWriter, r *http.Request) {
+func InventoryReportHandler(c *gin.Context) {
 	report, err := database.GetInventoryReport()
 	if err != nil {
-		http.Error(w, "Error generating inventory report", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating inventory report"})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(report)
+	c.JSON(http.StatusOK, report)
 }
 
-func IssueReportHandler(w http.ResponseWriter, r *http.Request) {
+func IssueReportHandler(c *gin.Context) {
 	report, err := database.GetIssueReport()
 	if err != nil {
-		http.Error(w, "Error generating issue report", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating issue report"})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(report)
+	c.JSON(http.StatusOK, report)
 }
 
-func ItemMovementReportHandler(w http.ResponseWriter, r *http.Request) {
-	itemID := chi.URLParam(r, "itemId")
-	report, err := database.GetItemMovementReport(itemID)
+func ItemMovementReportHandler(c *gin.Context) {
+	itemID, err := strconv.ParseUint(c.Param("itemId"), 10, 32)
 	if err != nil {
-		http.Error(w, "Error generating item movement report", http.StatusInternalServerError)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid item ID"})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(report)
+	report, err := database.GetItemMovementReport(uint(itemID))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating item movement report"})
+		return
+	}
+
+	c.JSON(http.StatusOK, report)
 }
