@@ -1,0 +1,111 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { Button } from "../../@/components/ui/button";
+import { Input } from "../../@/components/ui/input";
+import { Label } from "../../@/components/ui/label";
+import { Select } from "../../@/components/ui/select";
+---
+
+<Layout>
+	<h1 class="text-3xl font-bold mb-6">Issue Items</h1>
+
+	<form id="issueForm" class="space-y-4 max-w-md">
+		<div>
+			<Label for="itemSelect">Select Item</Label>
+			<Select id="itemSelect" name="item_id" required>
+				<option value="">Select an item</option>
+				<!-- Items will be populated dynamically -->
+			</Select>
+		</div>
+
+		<div>
+			<Label for="quantityInput">Quantity</Label>
+			<Input
+				type="number"
+				id="quantityInput"
+				name="quantity"
+				required
+				min="1"
+			/>
+		</div>
+
+		<div>
+			<Label for="fromLocationSelect">From Location</Label>
+			<Select id="fromLocationSelect" name="from_location_id" required>
+				<option value="">Select a location</option>
+				<!-- Locations will be populated dynamically -->
+			</Select>
+		</div>
+
+		<div>
+			<Label for="toLocationSelect">To Location</Label>
+			<Select id="toLocationSelect" name="to_location_id" required>
+				<option value="">Select a location</option>
+				<!-- Locations will be populated dynamically -->
+			</Select>
+		</div>
+
+		<Button type="submit" class="w-full">Request Issue</Button>
+	</form>
+
+	<div id="issueResult" class="mt-4"></div>
+</Layout>
+
+<script>
+	import { fetchItems, fetchLocations, requestIssue } from "../lib/api";
+
+	const issueForm = document.getElementById("issueForm") as HTMLFormElement;
+	const itemSelect = document.getElementById("itemSelect");
+	const fromLocationSelect = document.getElementById("fromLocationSelect");
+	const toLocationSelect = document.getElementById("toLocationSelect");
+	const issueResult = document.getElementById("issueResult");
+
+	async function populateSelects() {
+		try {
+			const [items, locations] = await Promise.all([
+				fetchItems(),
+				fetchLocations(),
+			]);
+
+			items.forEach((item) => {
+				const option = document.createElement("option");
+				option.value = item.id;
+				option.textContent = `${item.name} (Quantity: ${item.quantity})`;
+				itemSelect.appendChild(option);
+			});
+
+			locations.forEach((location) => {
+				const fromOption = document.createElement("option");
+				fromOption.value = location.id;
+				fromOption.textContent = location.name;
+				fromLocationSelect.appendChild(fromOption);
+
+				const toOption = fromOption.cloneNode(true);
+				toLocationSelect.appendChild(toOption);
+			});
+		} catch (error) {
+			console.error("Error populating selects:", error);
+			issueResult.innerHTML =
+				'<p class="text-red-500">Error loading items and locations</p>';
+		}
+	}
+
+	issueForm.addEventListener("submit", async (e) => {
+		e.preventDefault();
+		const formData = new FormData(issueForm);
+		const issueData = Object.fromEntries(formData.entries());
+
+		try {
+			const result = await requestIssue(issueData);
+			issueResult.innerHTML =
+				'<p class="text-green-500">Issue request submitted successfully</p>';
+			issueForm.reset();
+		} catch (error) {
+			console.error("Error requesting issue:", error);
+			issueResult.innerHTML =
+				'<p class="text-red-500">Error submitting issue request</p>';
+		}
+	});
+
+	populateSelects();
+</script>

@@ -1,0 +1,5 @@
+Directory Structure:
+
+----------------------------------------
+
+Contents of warehouse management file:

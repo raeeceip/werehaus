@@ -1,0 +1,34 @@
+# Ignore compiled Go binaries
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Ignore Go build output
+/bin/
+/pkg/
+/out/
+
+# Ignore Astro build output
+.astro/
+/.cache/
+
+# Ignore editor-specific files
+.vscode/
+.idea/
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore vendor files
+/vendor/
+
+#Ignore all node_modules directories
+node_modules/
+
+# Ignore build output
+/build/
+
+# ignore astro dist
+dist/

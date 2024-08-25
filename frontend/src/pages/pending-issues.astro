@@ -1,0 +1,101 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { Button } from "../../@/components/ui/button";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "../../@/components/ui/table";
+---
+
+<Layout>
+	<h1 class="text-3xl font-bold mb-6">Pending Issues</h1>
+
+	<Table>
+		<TableHeader>
+			<TableRow>
+				<TableHead>Item</TableHead>
+				<TableHead>Quantity</TableHead>
+				<TableHead>From Location</TableHead>
+				<TableHead>To Location</TableHead>
+				<TableHead>Requested By</TableHead>
+				<TableHead>Date</TableHead>
+				<TableHead>Actions</TableHead>
+			</TableRow>
+		</TableHeader>
+		<TableBody id="pendingIssuesTableBody">
+			<!-- Pending issues will be loaded here -->
+		</TableBody>
+	</Table>
+</Layout>
+
+<script>
+	import { fetchPendingIssues, approveIssue, denyIssue } from "../lib/api";
+
+	const pendingIssuesTableBody = document.getElementById(
+		"pendingIssuesTableBody",
+	);
+
+	async function loadPendingIssues() {
+		try {
+			const pendingIssues = await fetchPendingIssues();
+			pendingIssuesTableBody.innerHTML = pendingIssues
+				.map(
+					(issue) => `
+        <tr>
+          <td>${issue.item_name}</td>
+          <td>${issue.quantity}</td>
+          <td>${issue.from_location_name}</td>
+          <td>${issue.to_location_name}</td>
+          <td>${issue.requested_by}</td>
+          <td>${new Date(issue.issue_date).toLocaleString()}</td>
+          <td>
+            <Button class="approve-btn" data-id="${issue.id}">Approve</Button>
+            <Button class="deny-btn" data-id="${issue.id}">Deny</Button>
+          </td>
+        </tr>
+      `,
+				)
+				.join("");
+
+			addButtonListeners();
+		} catch (error) {
+			console.error("Error loading pending issues:", error);
+			pendingIssuesTableBody.innerHTML =
+				'<tr><td colspan="7">Error loading pending issues</td></tr>';
+		}
+	}
+
+	function addButtonListeners() {
+		document.querySelectorAll(".approve-btn").forEach((btn) => {
+			btn.addEventListener("click", async () => {
+				const target = event.currentTarget as HTMLButtonElement;
+				const issueId = target.dataset.id;
+				try {
+					await approveIssue(issueId);
+					loadPendingIssues();
+				} catch (error) {
+					console.error("Error approving issue:", error);
+				}
+			});
+		});
+
+		document.querySelectorAll(".deny-btn").forEach((btn) => {
+			btn.addEventListener("click", async () => {
+				const target = event.currentTarget as HTMLButtonElement;
+				const issueId = target.dataset.id;
+				try {
+					await denyIssue(issueId);
+					loadPendingIssues();
+				} catch (error) {
+					console.error("Error denying issue:", error);
+				}
+			});
+		});
+	}
+
+	loadPendingIssues();
+</script>

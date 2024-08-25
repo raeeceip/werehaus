@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warehouse Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+</head>
+
+<body class="bg-gray-100">
+    <nav class="bg-gray-800 text-white p-4">
+        <ul class="flex space-x-4">
+            <li><a href="/" class="hover:text-gray-300">Home</a></li>
+            <li><a href="/items" class="hover:text-gray-300">Items</a></li>
+            <li><a href="/locations" class="hover:text-gray-300">Locations</a></li>
+            <li><a href="/issue" class="hover:text-gray-300">Issue Items</a></li>
+            <li><a href="/reports" class="hover:text-gray-300">Reports</a></li>
+        </ul>
+    </nav>
+    <main class="container mx-auto mt-8 px-4">
+        {{template "content" .}}
+    </main>
+</body>
+
+</html>

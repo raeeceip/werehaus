@@ -1,0 +1,21 @@
+{{define "content"}}
+<h1 class="text-3xl font-bold mb-4">Welcome to Warehouse Management System</h1>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-xl font-semibold mb-2">Total Items</h2>
+        <p class="text-3xl font-bold" hx-get="/api/items/count" hx-trigger="load">0</p>
+    </div>
+    <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-xl font-semibold mb-2">Total Locations</h2>
+        <p class="text-3xl font-bold" hx-get="/api/locations/count" hx-trigger="load">0</p>
+    </div>
+    <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-xl font-semibold mb-2">Items Issued Today</h2>
+        <p class="text-3xl font-bold" hx-get="/api/issues/today" hx-trigger="load">0</p>
+    </div>
+    <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-xl font-semibold mb-2">Low Stock Items</h2>
+        <p class="text-3xl font-bold" hx-get="/api/items/low-stock" hx-trigger="load">0</p>
+    </div>
+</div>
+{{end}}

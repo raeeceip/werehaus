@@ -1,0 +1,41 @@
+{{define "content"}}
+<h1 class="text-3xl font-bold mb-4">Issue Items</h1>
+<form hx-post="/api/issue" hx-swap="outerHTML" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+    <div class="mb-4">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="item">
+            Item
+        </label>
+        <select
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="item" name="item_id" hx-get="/api/items" hx-trigger="load" hx-target="this" hx-swap="innerHTML">
+            <!-- Items will be loaded here -->
+        </select>
+    </div>
+    <div class="mb-4">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="quantity">
+            Quantity
+        </label>
+        <input
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="quantity" type="number" name="quantity" required>
+    </div>
+    <div class="mb-4">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="location">
+            Location
+        </label>
+        <select
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="location" name="location_id" hx-get="/api/locations" hx-trigger="load" hx-target="this"
+            hx-swap="innerHTML">
+            <!-- Locations will be loaded here -->
+        </select>
+    </div>
+    <div class="flex items-center justify-between">
+        <button
+            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            type="submit">
+            Issue Item
+        </button>
+    </div>
+</form>
+{{end}}
