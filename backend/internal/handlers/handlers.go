@@ -1,172 +1,232 @@
 package handlers
 
 import (
-	"go-warehouse-management/internal/database"
-	"go-warehouse-management/internal/models"
-	"html/template"
+	"encoding/json"
 	"net/http"
 	"strconv"
+
+	"go-warehouse-management/internal/database"
+	"go-warehouse-management/internal/models"
+
+	"github.com/go-chi/chi/v5"
 )
 
-type Item struct {
-	Name        string
-	Description string
-	Quantity    int
+func LoginHandler(w http.ResponseWriter, r *http.Request) {
+	// Implement login logic
 }
 
-type Location struct {
-	Name        string
-	Description string
+func LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	// Implement logout logic
 }
 
-func HomeHandler(w http.ResponseWriter, r *http.Request) {
-	tmpl := template.Must(template.ParseFiles("web/templates/layout.html", "web/templates/home.html"))
-	tmpl.Execute(w, nil)
-}
+func GetItemsHandler(w http.ResponseWriter, r *http.Request) {
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	search := r.URL.Query().Get("search")
 
-func ItemsHandler(w http.ResponseWriter, r *http.Request) {
-	tmpl := template.Must(template.ParseFiles("web/templates/layout.html", "web/templates/items.html"))
-	tmpl.Execute(w, nil)
-}
+	items, err := database.GetItems(page, limit, search)
+	if err != nil {
+		http.Error(w, "Error fetching items", http.StatusInternalServerError)
+		return
+	}
 
-func LocationsHandler(w http.ResponseWriter, r *http.Request) {
-	tmpl := template.Must(template.ParseFiles("web/templates/layout.html", "web/templates/locations.html"))
-	tmpl.Execute(w, nil)
-}
-
-func IssueHandler(w http.ResponseWriter, r *http.Request) {
-	tmpl := template.Must(template.ParseFiles("web/templates/layout.html", "web/templates/issue.html"))
-	tmpl.Execute(w, nil)
-}
-
-func ReportsHandler(w http.ResponseWriter, r *http.Request) {
-	tmpl := template.Must(template.ParseFiles("web/templates/layout.html", "web/templates/reports.html"))
-	tmpl.Execute(w, nil)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(items)
 }
 
 func CreateItemHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	// Parse the form data
-	err := r.ParseForm()
+	var item models.Item
+	err := json.NewDecoder(r.Body).Decode(&item)
 	if err != nil {
-		http.Error(w, "Error parsing form", http.StatusBadRequest)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	// Extract item details from the form
-	name := r.FormValue("name")
-	description := r.FormValue("description")
-	quantity := r.FormValue("quantity")
-
-	// Validate input
-	if name == "" || quantity == "" {
-		http.Error(w, "Name and quantity are required", http.StatusBadRequest)
-		return
-	}
-
-	// Convert quantity to integer
-	qty, err := strconv.Atoi(quantity)
-	if err != nil {
-		http.Error(w, "Invalid quantity", http.StatusBadRequest)
-		return
-	}
-
-	// Create a new item (you'll need to implement this function in your data layer)
-	newItem := &models.Item{
-		Name:        name,
-		Description: description,
-		Quantity:    qty,
-	}
-	err = database.CreateItem(newItem)
+	err = database.CreateItem(&item)
 	if err != nil {
 		http.Error(w, "Error creating item", http.StatusInternalServerError)
 		return
 	}
 
-	// Redirect to the items page after successful creation
-	http.Redirect(w, r, "/items", http.StatusSeeOther)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(item)
+}
+
+func UpdateItemHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	var item models.Item
+	err := json.NewDecoder(r.Body).Decode(&item)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	item.ID = id
+	err = database.UpdateItem(&item)
+	if err != nil {
+		http.Error(w, "Error updating item", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(item)
+}
+
+func DeleteItemHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	err := database.DeleteItem(id)
+	if err != nil {
+		http.Error(w, "Error deleting item", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func GetLocationsHandler(w http.ResponseWriter, r *http.Request) {
+	locations, err := database.GetLocations()
+	if err != nil {
+		http.Error(w, "Error fetching locations", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(locations)
 }
 
 func CreateLocationHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	err := r.ParseForm()
+	var location models.Location
+	err := json.NewDecoder(r.Body).Decode(&location)
 	if err != nil {
-		http.Error(w, "Error parsing form", http.StatusBadRequest)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	name := r.FormValue("name")
-
-	if name == "" {
-		http.Error(w, "Name is required", http.StatusBadRequest)
-		return
-	}
-
-	newLocation := &models.Location{
-		Name: name,
-	}
-
-	err = database.CreateLocation(newLocation)
+	err = database.CreateLocation(&location)
 	if err != nil {
 		http.Error(w, "Error creating location", http.StatusInternalServerError)
 		return
 	}
 
-	http.Redirect(w, r, "/locations", http.StatusSeeOther)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(location)
 }
 
-func IssueItemHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	err := r.ParseForm()
+func UpdateLocationHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	var location models.Location
+	err := json.NewDecoder(r.Body).Decode(&location)
 	if err != nil {
-		http.Error(w, "Error parsing form", http.StatusBadRequest)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	itemID := r.FormValue("item_id")
-	locationID := r.FormValue("location_id")
-	quantity := r.FormValue("quantity")
-
-	if itemID == "" || locationID == "" || quantity == "" {
-		http.Error(w, "Item ID, Location ID, and quantity are required", http.StatusBadRequest)
-		return
-	}
-
-	itemIDInt, err := strconv.Atoi(itemID)
+	location.ID = id
+	err = database.UpdateLocation(&location)
 	if err != nil {
-		http.Error(w, "Invalid item ID", http.StatusBadRequest)
+		http.Error(w, "Error updating location", http.StatusInternalServerError)
 		return
 	}
 
-	locationIDInt, err := strconv.Atoi(locationID)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(location)
+}
+
+func DeleteLocationHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	err := database.DeleteLocation(id)
 	if err != nil {
-		http.Error(w, "Invalid location ID", http.StatusBadRequest)
+		http.Error(w, "Error deleting location", http.StatusInternalServerError)
 		return
 	}
 
-	quantityInt, err := strconv.Atoi(quantity)
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func RequestIssueHandler(w http.ResponseWriter, r *http.Request) {
+	var issue models.Issue
+	err := json.NewDecoder(r.Body).Decode(&issue)
 	if err != nil {
-		http.Error(w, "Invalid quantity", http.StatusBadRequest)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	err = database.IssueItem(itemIDInt, locationIDInt, quantityInt)
+	err = database.CreateIssue(&issue)
 	if err != nil {
-		http.Error(w, "Error issuing item", http.StatusInternalServerError)
+		http.Error(w, "Error creating issue", http.StatusInternalServerError)
 		return
 	}
 
-	http.Redirect(w, r, "/items", http.StatusSeeOther)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(issue)
+}
+
+func GetPendingIssuesHandler(w http.ResponseWriter, r *http.Request) {
+	issues, err := database.GetPendingIssues()
+	if err != nil {
+		http.Error(w, "Error fetching pending issues", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(issues)
+}
+
+func ApproveIssueHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	err := database.ApproveIssue(id)
+	if err != nil {
+		http.Error(w, "Error approving issue", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func DenyIssueHandler(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	err := database.DenyIssue(id)
+	if err != nil {
+		http.Error(w, "Error denying issue", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func InventoryReportHandler(w http.ResponseWriter, r *http.Request) {
+	report, err := database.GetInventoryReport()
+	if err != nil {
+		http.Error(w, "Error generating inventory report", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(report)
+}
+
+func IssueReportHandler(w http.ResponseWriter, r *http.Request) {
+	report, err := database.GetIssueReport()
+	if err != nil {
+		http.Error(w, "Error generating issue report", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(report)
+}
+
+func ItemMovementReportHandler(w http.ResponseWriter, r *http.Request) {
+	itemID := chi.URLParam(r, "itemId")
+	report, err := database.GetItemMovementReport(itemID)
+	if err != nil {
+		http.Error(w, "Error generating item movement report", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(report)
 }
