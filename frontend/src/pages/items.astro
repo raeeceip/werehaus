@@ -11,14 +11,6 @@ import {
 	TableHeader,
 	TableRow,
 } from "../../@/components/ui/table";
-import { fetchItems, createItem } from "../lib/api";
-
-let items = [];
-try {
-	items = await fetchItems();
-} catch (error) {
-	console.error("Error fetching items:", error);
-}
 ---
 
 <Layout>
@@ -77,32 +69,8 @@ try {
 					<TableHead>Actions</TableHead>
 				</TableRow>
 			</TableHeader>
-			<TableBody>
-				{
-					items.length > 0 ? (
-						items.map((item) => (
-							<TableRow>
-								<TableCell>{item.name}</TableCell>
-								<TableCell>{item.quantity}</TableCell>
-								<TableCell>{item.description || "-"}</TableCell>
-								<TableCell>
-									<Button variant="outline" className="mr-2">
-										Edit
-									</Button>
-									<Button variant="destructive">
-										Delete
-									</Button>
-								</TableCell>
-							</TableRow>
-						))
-					) : (
-						<TableRow>
-							<TableCell colSpan={4} className="text-center">
-								No items found
-							</TableCell>
-						</TableRow>
-					)
-				}
+			<TableBody id="itemsTableBody">
+				<!-- Items will be loaded here -->
 			</TableBody>
 		</Table>
 	</div>
@@ -117,6 +85,7 @@ try {
 	const newItemForm = document.getElementById(
 		"new-item-form",
 	) as HTMLFormElement;
+	const itemsTableBody = document.getElementById("itemsTableBody");
 
 	openModalBtn.addEventListener("click", () => {
 		itemModal.classList.remove("hidden");
@@ -135,10 +104,41 @@ try {
 			await createItem(newItem);
 			itemModal.classList.add("hidden");
 			newItemForm.reset();
-			location.reload(); // Reload the page to show the new item
+			loadItems();
 		} catch (error) {
 			console.error("Error creating item:", error);
-			// You might want to show an error message to the user here
+			alert("Error creating item. Please try again.");
 		}
 	});
+
+	async function loadItems() {
+		try {
+			const items = await fetchItems();
+			itemsTableBody.innerHTML = items
+				.map(
+					(item) => `
+				<tr>
+					<td>${item.name}</td>
+					<td>${item.quantity}</td>
+					<td>${item.description || "-"}</td>
+					<td>
+						<button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2">
+							Edit
+						</button>
+						<button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+							Delete
+						</button>
+					</td>
+				</tr>
+			`,
+				)
+				.join("");
+		} catch (error) {
+			console.error("Error loading items:", error);
+			itemsTableBody.innerHTML =
+				'<tr><td colspan="4">Error loading items</td></tr>';
+		}
+	}
+
+	loadItems();
 </script>

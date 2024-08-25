@@ -11,50 +11,60 @@ import { Card } from "../../@/components/ui/card";
 		<Card>
 			<div class="p-6">
 				<h2 class="text-xl font-semibold mb-2">Total Items</h2>
-				<p
-					class="text-3xl font-bold"
-					hx-get="/api/items/count"
-					hx-trigger="load"
-				>
-					0
-				</p>
+				<p id="totalItems" class="text-3xl font-bold">0</p>
 			</div>
 		</Card>
 		<Card>
 			<div class="p-6">
 				<h2 class="text-xl font-semibold mb-2">Total Locations</h2>
-				<p
-					class="text-3xl font-bold"
-					hx-get="/api/locations/count"
-					hx-trigger="load"
-				>
-					0
-				</p>
+				<p id="totalLocations" class="text-3xl font-bold">0</p>
 			</div>
 		</Card>
 		<Card>
 			<div class="p-6">
 				<h2 class="text-xl font-semibold mb-2">Items Issued Today</h2>
-				<p
-					class="text-3xl font-bold"
-					hx-get="/api/issues/today"
-					hx-trigger="load"
-				>
-					0
-				</p>
+				<p id="itemsIssuedToday" class="text-3xl font-bold">0</p>
 			</div>
 		</Card>
 		<Card>
 			<div class="p-6">
 				<h2 class="text-xl font-semibold mb-2">Low Stock Items</h2>
-				<p
-					class="text-3xl font-bold"
-					hx-get="/api/items/low-stock"
-					hx-trigger="load"
-				>
-					0
-				</p>
+				<p id="lowStockItems" class="text-3xl font-bold">0</p>
 			</div>
 		</Card>
 	</div>
 </Layout>
+
+<script>
+	import { fetchItems, fetchLocations, fetchPendingIssues } from "../lib/api";
+
+	async function updateDashboard() {
+		try {
+			const [items, locations, pendingIssues] = await Promise.all([
+				fetchItems(),
+				fetchLocations(),
+				fetchPendingIssues(),
+			]);
+
+			document.getElementById("totalItems").textContent =
+				items.length.toString();
+			document.getElementById("totalLocations").textContent =
+				locations.length.toString();
+			document.getElementById("itemsIssuedToday").textContent =
+				pendingIssues
+					.filter(
+						(issue) =>
+							new Date(issue.issue_date).toDateString() ===
+							new Date().toDateString(),
+					)
+					.length.toString();
+			document.getElementById("lowStockItems").textContent = items
+				.filter((item) => item.quantity < 10)
+				.length.toString();
+		} catch (error) {
+			console.error("Error updating dashboard:", error);
+		}
+	}
+
+	updateDashboard();
+</script>

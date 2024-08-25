@@ -11,9 +11,6 @@ import {
 	TableHeader,
 	TableRow,
 } from "../../@/components/ui/table";
-import { fetchLocations, createLocation } from "../lib/api";
-
-const locations = await fetchLocations();
 ---
 
 <Layout>
@@ -61,28 +58,15 @@ const locations = await fetchLocations();
 					<TableHead>Actions</TableHead>
 				</TableRow>
 			</TableHeader>
-			<TableBody>
-				{
-					locations.map((location) => (
-						<TableRow>
-							<TableCell>{location.name}</TableCell>
-							<TableCell>{location.capacity}</TableCell>
-							<TableCell>
-								<Button variant="outline" className="mr-2">
-									Edit
-								</Button>
-								<Button variant="destructive">Delete</Button>
-							</TableCell>
-						</TableRow>
-					))
-				}
+			<TableBody id="locationsTableBody">
+				<!-- Locations will be loaded here -->
 			</TableBody>
 		</Table>
 	</div>
 </Layout>
 
 <script>
-	import { createLocation } from "../lib/api";
+	import { createLocation, fetchLocations } from "../lib/api";
 
 	const openModalBtn = document.getElementById("openModalBtn");
 	const closeModalBtn = document.getElementById("closeModalBtn");
@@ -90,6 +74,7 @@ const locations = await fetchLocations();
 	const newLocationForm = document.getElementById(
 		"new-location-form",
 	) as HTMLFormElement;
+	const locationsTableBody = document.getElementById("locationsTableBody");
 
 	openModalBtn.addEventListener("click", () => {
 		locationModal.classList.remove("hidden");
@@ -108,11 +93,40 @@ const locations = await fetchLocations();
 			await createLocation(newLocation);
 			locationModal.classList.add("hidden");
 			newLocationForm.reset();
-			location.reload(); // Reload the page to show the new location
+			loadLocations();
 		} catch (error) {
 			console.error("Error creating location:", error);
-			// You might want to show an error message to the user here
-			alert("Error creating location:");
+			alert("Error creating location. Please try again.");
 		}
 	});
+
+	async function loadLocations() {
+		try {
+			const locations = await fetchLocations();
+			locationsTableBody.innerHTML = locations
+				.map(
+					(location) => `
+				<tr>
+					<td>${location.name}</td>
+					<td>${location.capacity}</td>
+					<td>
+						<button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2">
+							Edit
+						</button>
+						<button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+							Delete
+						</button>
+					</td>
+				</tr>
+			`,
+				)
+				.join("");
+		} catch (error) {
+			console.error("Error loading locations:", error);
+			locationsTableBody.innerHTML =
+				'<tr><td colspan="3">Error loading locations</td></tr>';
+		}
+	}
+
+	loadLocations();
 </script>
