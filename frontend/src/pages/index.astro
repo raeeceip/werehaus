@@ -38,12 +38,28 @@ import { Card } from "../../@/components/ui/card";
 <script>
 	import { fetchItems, fetchLocations, fetchPendingIssues } from "../lib/api";
 
+	interface Item {
+		id: number;
+		name: string;
+		quantity: number;
+	}
+
+	interface Location {
+		id: number;
+		name: string;
+	}
+
+	interface PendingIssue {
+		id: number;
+		issue_date: string;
+	}
+
 	async function updateDashboard() {
 		try {
 			const [items, locations, pendingIssues] = await Promise.all([
-				fetchItems(),
-				fetchLocations(),
-				fetchPendingIssues(),
+				fetchItems() as Promise<Item[]>,
+				fetchLocations() as Promise<Location[]>,
+				fetchPendingIssues() as Promise<PendingIssue[]>,
 			]);
 
 			document.getElementById("totalItems").textContent =

@@ -204,37 +204,34 @@ func DenyIssueHandler(c *gin.Context) {
 }
 
 func InventoryReportHandler(c *gin.Context) {
-	report, err := database.GetInventoryReport()
+	inventory, err := database.GetInventoryReport()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating inventory report"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	c.JSON(http.StatusOK, report)
+	c.JSON(http.StatusOK, gin.H{"inventory": inventory})
 }
 
 func IssueReportHandler(c *gin.Context) {
-	report, err := database.GetIssueReport()
+	issues, err := database.GetIssueReport()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating issue report"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	c.JSON(http.StatusOK, report)
+	c.JSON(http.StatusOK, gin.H{"issues": issues})
 }
 
 func ItemMovementReportHandler(c *gin.Context) {
-	itemID, err := strconv.ParseUint(c.Param("itemId"), 10, 32)
+	itemID, err := strconv.ParseUint(c.Param("itemId"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid item ID"})
 		return
 	}
 
-	report, err := database.GetItemMovementReport(uint(itemID))
+	movements, err := database.GetItemMovementReport(uint(itemID))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error generating item movement report"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	c.JSON(http.StatusOK, report)
+	c.JSON(http.StatusOK, gin.H{"movements": movements})
 }

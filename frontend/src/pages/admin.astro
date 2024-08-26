@@ -1,0 +1,106 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { Button } from "../../@/components/ui/button";
+import { Input } from "../../@/components/ui/input";
+import { Label } from "../../@/components/ui/label";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "../../@/components/ui/table";
+---
+
+<Layout>
+	<h1 class="text-3xl font-bold mb-4">Admin Dashboard</h1>
+
+	<div class="mb-8">
+		<h2 class="text-2xl font-semibold mb-2">Create New User</h2>
+		<form id="createUserForm" class="space-y-4 max-w-md">
+			<div>
+				<Label htmlFor="username">Username</Label>
+				<Input type="text" id="username" name="username" required />
+			</div>
+			<div>
+				<Label htmlFor="password">Password</Label>
+				<Input type="password" id="password" name="password" required />
+			</div>
+			<div>
+				<Label htmlFor="isAdmin">
+					<Input type="checkbox" id="isAdmin" name="isAdmin" />
+					Is Admin
+				</Label>
+			</div>
+			<Button type="submit">Create User</Button>
+		</form>
+	</div>
+
+	<div>
+		<h2 class="text-2xl font-semibold mb-2">User List</h2>
+		<Table>
+			<TableHeader>
+				<TableRow>
+					<TableHead>ID</TableHead>
+					<TableHead>Username</TableHead>
+					<TableHead>Is Admin</TableHead>
+				</TableRow>
+			</TableHeader>
+			<TableBody id="userTableBody">
+				<!-- Users will be loaded here -->
+			</TableBody>
+		</Table>
+	</div>
+</Layout>
+
+<script>
+	import { createUser, fetchUsers } from "../lib/api";
+
+	const createUserForm = document.getElementById(
+		"createUserForm",
+	) as HTMLFormElement;
+	const userTableBody = document.getElementById("userTableBody");
+
+	createUserForm.addEventListener("submit", async (e) => {
+		e.preventDefault();
+		const formData = new FormData(createUserForm);
+		const newUser = {
+			username: formData.get("username") as string,
+			password: formData.get("password") as string,
+			isAdmin: formData.get("isAdmin") === "on",
+		};
+
+		try {
+			await createUser(newUser);
+			createUserForm.reset();
+			loadUsers();
+		} catch (error) {
+			console.error("Error creating user:", error);
+			alert("Error creating user. Please try again.");
+		}
+	});
+
+	async function loadUsers() {
+		try {
+			const users = await fetchUsers();
+			userTableBody.innerHTML = users
+				.map(
+					(user) => `
+                <tr>
+                    <td>${user.id}</td>
+                    <td>${user.username}</td>
+                    <td>${user.isAdmin ? "Yes" : "No"}</td>
+                </tr>
+            `,
+				)
+				.join("");
+		} catch (error) {
+			console.error("Error loading users:", error);
+			userTableBody.innerHTML =
+				'<tr><td colspan="3">Error loading users</td></tr>';
+		}
+	}
+
+	loadUsers();
+</script>

@@ -1,8 +1,10 @@
 package database
 
 import (
+	"fmt"
 	"go-warehouse-management/internal/models"
 
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -13,13 +15,13 @@ func InitDB() error {
 	var err error
 	DB, err = gorm.Open(sqlite.Open("warehouse.db"), &gorm.Config{})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to connect to database: %v", err)
 	}
 
 	// Auto Migrate the schema
 	err = DB.AutoMigrate(&models.User{}, &models.Item{}, &models.Location{}, &models.Issue{})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to auto migrate schema: %v", err)
 	}
 
 	return PopulateWithSampleData()
@@ -29,13 +31,13 @@ func ResetDatabase() error {
 	// Drop all tables
 	err := DB.Migrator().DropTable(&models.User{}, &models.Item{}, &models.Location{}, &models.Issue{})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to drop tables: %v", err)
 	}
 
 	// Recreate tables
 	err = DB.AutoMigrate(&models.User{}, &models.Item{}, &models.Location{}, &models.Issue{})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to recreate tables: %v", err)
 	}
 
 	return PopulateWithSampleData()
@@ -69,18 +71,18 @@ func PopulateWithSampleData() error {
 	// Insert items
 	for _, item := range items {
 		if err := DB.Create(&item).Error; err != nil {
-			return err
+			return fmt.Errorf("failed to insert item: %v", err)
 		}
 	}
 
 	// Insert locations
 	for _, location := range locations {
 		if err := DB.Create(&location).Error; err != nil {
-			return err
+			return fmt.Errorf("failed to insert location: %v", err)
 		}
 	}
 
-	return nil
+	return createAdminUser()
 }
 
 func GetItems(page, limit int, search string) ([]models.Item, int64, error) {
@@ -94,11 +96,11 @@ func GetItems(page, limit int, search string) ([]models.Item, int64, error) {
 	}
 
 	if err := query.Count(&total).Error; err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("failed to count items: %v", err)
 	}
 
 	if err := query.Offset((page - 1) * limit).Limit(limit).Find(&items).Error; err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("failed to fetch items: %v", err)
 	}
 
 	return items, total, nil
@@ -170,4 +172,51 @@ func GetItemMovementReport(itemID uint) ([]models.Issue, error) {
 	var issues []models.Issue
 	err := DB.Where("item_id = ?", itemID).Find(&issues).Error
 	return issues, err
+}
+
+func createAdminUser() error {
+	var count int64
+	DB.Model(&models.User{}).Where("is_admin = ?", true).Count(&count)
+	if count == 0 {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte("adminpassword"), bcrypt.DefaultCost)
+		if err != nil {
+			return fmt.Errorf("failed to hash password: %v", err)
+		}
+		adminUser := models.User{
+			Username: "admin",
+			Password: string(hashedPassword),
+			IsAdmin:  true,
+		}
+		result := DB.Create(&adminUser)
+		return result.Error
+	}
+	return nil
+}
+
+func CreateUser(user *models.User) error {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %v", err)
+	}
+	user.Password = string(hashedPassword)
+	result := DB.Create(user)
+	return result.Error
+}
+
+func GetUserByUsername(username string) (*models.User, error) {
+	var user models.User
+	result := DB.Where("username = ?", username).First(&user)
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to fetch user: %v", result.Error)
+	}
+	return &user, nil
+}
+
+func GetUsers() ([]models.User, error) {
+	var users []models.User
+	result := DB.Find(&users)
+	return users, result.Error
 }

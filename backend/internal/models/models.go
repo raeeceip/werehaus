@@ -1,65 +1,47 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
+
+type User struct {
+	gorm.Model
+	Username string `gorm:"uniqueIndex;not null"`
+	Password string `gorm:"not null"`
+	IsAdmin  bool   `gorm:"default:false"`
+}
 
 type Item struct {
-	ID          uint   `json:"id" gorm:"primaryKey;autoIncrement"`
-	Name        string `json:"name"`
-	Quantity    int    `json:"quantity"`
-	Description string `json:"description"`
+	gorm.Model
+	Name        string `gorm:"not null"`
+	Description string
+	Quantity    int `gorm:"not null"`
 }
 
 type Location struct {
-	ID       uint   `json:"id" gorm:"primaryKey"`
-	Name     string `json:"name"`
-	Capacity int    `json:"capacity"`
-}
-
-type User struct {
-	ID   uint   `json:"id" gorm:"primaryKey"`
-	Name string `json:"name"`
+	gorm.Model
+	Name     string `gorm:"not null"`
+	Capacity int    `gorm:"not null"`
 }
 
 type Issue struct {
-	ID             uint `gorm:"primaryKey"`
-	UserID         uint
-	ItemID         uint
-	FromLocationID uint
-	ToLocationID   uint
-	Quantity       int
-	Status         string
-	IssueDate      time.Time
-	ApprovalDate   *time.Time
-	ApprovedBy     *uint
-	User           User     `gorm:"foreignKey:UserID"`
-	Item           Item     `gorm:"foreignKey:ItemID"`
-	FromLocation   Location `gorm:"foreignKey:FromLocationID"`
-	ToLocation     Location `gorm:"foreignKey:ToLocationID"`
-	ApprovedByUser *User    `gorm:"foreignKey:ApprovedBy"`
+	gorm.Model
+	ItemID   int    `gorm:"not null"`
+	Item     Item   `gorm:"foreignKey:ItemID"`
+	Quantity int    `gorm:"not null"`
+	Status   string `gorm:"not null;default:'pending'"`
 }
 
 type InventoryReport struct {
-	ID             uint   `json:"id"`
-	Name           string `json:"name"`
-	Quantity       int    `json:"quantity"`
-	IssuedQuantity int    `json:"issued_quantity"`
+	ID             int
+	Name           string
+	Quantity       int
+	IssuedQuantity int
 }
 
-type IssueReport struct {
-	ID           uint      `json:"id"`
-	ItemName     string    `json:"item_name"`
-	Quantity     int       `json:"quantity"`
-	FromLocation string    `json:"from_location"`
-	ToLocation   string    `json:"to_location"`
-	Status       string    `json:"status"`
-	CreatedAt    time.Time `json:"created_at"`
-}
-
-type ItemMovement struct {
-	IssueID      uint      `json:"issue_id"`
-	Quantity     int       `json:"quantity"`
-	FromLocation string    `json:"from_location"`
-	ToLocation   string    `json:"to_location"`
-	Status       string    `json:"status"`
-	CreatedAt    time.Time `json:"created_at"`
+// If you need a custom time type for any reason, you can add this:
+type CustomTime struct {
+	time.Time
 }
