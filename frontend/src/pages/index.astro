@@ -1,86 +1,24 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { Card } from "../../@/components/ui/card";
+import { Button } from "../../@/components/ui/button";
+import { Warehouse } from "lucide-react";
 ---
 
-<Layout>
-	<h1 class="text-3xl font-bold mb-4">
-		Welcome to Warehouse Management System
-	</h1>
-	<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-		<Card>
-			<div class="p-6">
-				<h2 class="text-xl font-semibold mb-2">Total Items</h2>
-				<p id="totalItems" class="text-3xl font-bold">0</p>
-			</div>
-		</Card>
-		<Card>
-			<div class="p-6">
-				<h2 class="text-xl font-semibold mb-2">Total Locations</h2>
-				<p id="totalLocations" class="text-3xl font-bold">0</p>
-			</div>
-		</Card>
-		<Card>
-			<div class="p-6">
-				<h2 class="text-xl font-semibold mb-2">Items Issued Today</h2>
-				<p id="itemsIssuedToday" class="text-3xl font-bold">0</p>
-			</div>
-		</Card>
-		<Card>
-			<div class="p-6">
-				<h2 class="text-xl font-semibold mb-2">Low Stock Items</h2>
-				<p id="lowStockItems" class="text-3xl font-bold">0</p>
-			</div>
-		</Card>
+<Layout title="Welcome to Werehaus">
+	<div
+		class="min-h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900"
+	>
+		<div id="welcome" class="text-center">
+			<h1 class="text-4xl font-bold mb-2">Welcome</h1>
+			<Button id="getStartedBtn" size="lg">Get Started</Button>
+		</div>
 	</div>
 </Layout>
 
 <script>
-	import { fetchItems, fetchLocations, fetchPendingIssues } from "../lib/api";
+	const getStartedBtn = document.getElementById("getStartedBtn");
 
-	interface Item {
-		id: number;
-		name: string;
-		quantity: number;
-	}
-
-	interface Location {
-		id: number;
-		name: string;
-	}
-
-	interface PendingIssue {
-		id: number;
-		issue_date: string;
-	}
-
-	async function updateDashboard() {
-		try {
-			const [items, locations, pendingIssues] = await Promise.all([
-				fetchItems() as Promise<Item[]>,
-				fetchLocations() as Promise<Location[]>,
-				fetchPendingIssues() as Promise<PendingIssue[]>,
-			]);
-
-			document.getElementById("totalItems").textContent =
-				items.length.toString();
-			document.getElementById("totalLocations").textContent =
-				locations.length.toString();
-			document.getElementById("itemsIssuedToday").textContent =
-				pendingIssues
-					.filter(
-						(issue) =>
-							new Date(issue.issue_date).toDateString() ===
-							new Date().toDateString(),
-					)
-					.length.toString();
-			document.getElementById("lowStockItems").textContent = items
-				.filter((item) => item.quantity < 10)
-				.length.toString();
-		} catch (error) {
-			console.error("Error updating dashboard:", error);
-		}
-	}
-
-	updateDashboard();
+	getStartedBtn.addEventListener("click", () => {
+		window.location.href = "/login";
+	});
 </script>

@@ -1,83 +1,96 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import { Button } from "../../@/components/ui/button";
 import { Input } from "../../@/components/ui/input";
 import { Label } from "../../@/components/ui/label";
-import { Button } from "../../@/components/ui/button";
+import {
+	Card,
+	CardHeader,
+	CardTitle,
+	CardDescription,
+	CardContent,
+	CardFooter,
+} from "../../@/components/ui/card";
 ---
 
-<Layout>
-	<div class="flex items-center justify-center min-h-screen">
-		<div class="w-full max-w-md space-y-8">
-			<div>
-				<h2
-					class="mt-6 text-center text-3xl font-extrabold text-foreground"
+<Layout title="Login - Werehaus">
+	<div
+		class="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900"
+	>
+		<Card
+			id="loginCard"
+			class="w-full max-w-md opacity-0 scale-95 transition-all duration-300 ease-out"
+		>
+			<CardHeader>
+				<CardTitle>Login</CardTitle>
+				<CardDescription>
+					Enter your credentials to access the warehouse management
+					system
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<form id="loginForm">
+					<div class="grid w-full items-center gap-4">
+						<div class="flex flex-col space-y-1.5">
+							<Label htmlFor="username">Username</Label>
+							<Input
+								id="username"
+								name="username"
+								placeholder="Enter your username"
+							/>
+						</div>
+						<div class="flex flex-col space-y-1.5">
+							<Label htmlFor="password">Password</Label>
+							<Input
+								id="password"
+								name="password"
+								type="password"
+								placeholder="Enter your password"
+							/>
+						</div>
+					</div>
+				</form>
+			</CardContent>
+			<CardFooter>
+				<Button type="submit" form="loginForm" class="w-full"
+					>Log In</Button
 				>
-					Sign in to your account
-				</h2>
-			</div>
-			<form id="loginForm" class="mt-8 space-y-6">
-				<div class="rounded-md shadow-sm -space-y-px">
-					<div>
-						<Label htmlFor="username" className="sr-only"
-							>Username</Label
-						>
-						<Input
-							id="username"
-							name="username"
-							type="text"
-							required
-							className="rounded-t-md"
-							placeholder="Username"
-						/>
-					</div>
-					<div>
-						<Label htmlFor="password" className="sr-only"
-							>Password</Label
-						>
-						<Input
-							id="password"
-							name="password"
-							type="password"
-							required
-							className="rounded-b-md"
-							placeholder="Password"
-						/>
-					</div>
-				</div>
-
-				<div>
-					<Button type="submit" className="w-full"> Sign in </Button>
-				</div>
-			</form>
-			<div id="loginResult" class="mt-4 text-center"></div>
-		</div>
+			</CardFooter>
+		</Card>
 	</div>
 </Layout>
 
 <script>
-	import { login } from "../lib/api";
+	import { loginUser } from "../lib/api";
 
+	const loginCard = document.getElementById("loginCard");
 	const loginForm = document.getElementById("loginForm") as HTMLFormElement;
-	const loginResult = document.getElementById("loginResult");
+
+	// Fade in the login card when the page loads
+	window.addEventListener("load", () => {
+		setTimeout(() => {
+			loginCard.classList.remove("opacity-0", "scale-95");
+		}, 100);
+	});
 
 	loginForm.addEventListener("submit", async (e) => {
 		e.preventDefault();
 		const formData = new FormData(loginForm);
-		const username = formData.get("username") as string;
-		const password = formData.get("password") as string;
+		const credentials = {
+			username: formData.get("username") as string,
+			password: formData.get("password") as string,
+		};
 
 		try {
-			const result = await login(username, password);
-			loginResult.innerHTML =
-				'<p class="text-green-500">Login successful! Redirecting...</p>';
-			// Redirect to the dashboard or home page after successful login
-			setTimeout(() => {
-				window.location.href = "/";
-			}, 1500);
+			const response = await loginUser(credentials);
+			if (response.token) {
+				window.location.href = "/dashboard";
+			} else {
+				alert("Login failed. Please check your credentials.");
+			}
 		} catch (error) {
 			console.error("Login error:", error);
-			loginResult.innerHTML =
-				'<p class="text-red-500">Login failed. Please check your credentials and try again.</p>';
+			alert("An error occurred during login. Please try again.");
 		}
 	});
 </script>

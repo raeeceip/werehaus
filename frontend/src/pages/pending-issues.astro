@@ -1,6 +1,7 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import { Button } from "../../@/components/ui/button";
+import { Input } from "../../@/components/ui/input";
 import {
 	Table,
 	TableBody,
@@ -9,92 +10,98 @@ import {
 	TableHeader,
 	TableRow,
 } from "../../@/components/ui/table";
+import { Badge } from "../../@/components/ui/badge";
+import { SearchIcon } from "lucide-react";
 ---
 
-<Layout>
-	<h1 class="text-3xl font-bold mb-6">Pending Issues</h1>
-
-	<Table>
-		<TableHeader>
-			<TableRow>
-				<TableHead>Item</TableHead>
-				<TableHead>Quantity</TableHead>
-				<TableHead>From Location</TableHead>
-				<TableHead>To Location</TableHead>
-				<TableHead>Requested By</TableHead>
-				<TableHead>Date</TableHead>
-				<TableHead>Actions</TableHead>
-			</TableRow>
-		</TableHeader>
-		<TableBody id="pendingIssuesTableBody">
-			<!-- Pending issues will be loaded here -->
-		</TableBody>
-	</Table>
+<Layout title="Pending Issues">
+	<div class="container mx-auto py-10">
+		<h1 class="text-2xl font-bold mb-5">Pending Issues</h1>
+		<div class="flex justify-between mb-4">
+			<div class="relative w-64">
+				<SearchIcon
+					class="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground"
+				/>
+				<Input placeholder="Search issues" class="pl-8" />
+			</div>
+		</div>
+		<Table>
+			<TableHeader>
+				<TableRow>
+					<TableHead>Issue ID</TableHead>
+					<TableHead>Type</TableHead>
+					<TableHead>Location</TableHead>
+					<TableHead>Reported By</TableHead>
+					<TableHead>Date</TableHead>
+					<TableHead>Priority</TableHead>
+					<TableHead>Status</TableHead>
+					<TableHead>Actions</TableHead>
+				</TableRow>
+			</TableHeader>
+			<TableBody id="issuesTableBody">
+				<TableRow>
+					<TableCell colspan="8">Loading...</TableCell>
+				</TableRow>
+			</TableBody>
+		</Table>
+	</div>
 </Layout>
 
 <script>
-	import { fetchPendingIssues, approveIssue, denyIssue } from "../lib/api";
+	import { fetchPendingIssues, updateIssueStatus } from "../lib/api";
 
-	const pendingIssuesTableBody = document.getElementById(
-		"pendingIssuesTableBody",
-	);
+	const issuesTableBody = document.getElementById("issuesTableBody");
 
 	async function loadPendingIssues() {
 		try {
-			const pendingIssues = await fetchPendingIssues();
-			pendingIssuesTableBody.innerHTML = pendingIssues
+			const issues = await fetchPendingIssues();
+			issuesTableBody.innerHTML = issues
 				.map(
 					(issue) => `
         <tr>
-          <td>${issue.item_name}</td>
-          <td>${issue.quantity}</td>
-          <td>${issue.from_location_name}</td>
-          <td>${issue.to_location_name}</td>
-          <td>${issue.requested_by}</td>
-          <td>${new Date(issue.issue_date).toLocaleString()}</td>
+          <td>${issue.id}</td>
+          <td>${issue.type}</td>
+          <td>${issue.location}</td>
+          <td>${issue.reportedBy}</td>
+          <td>${issue.date}</td>
+          <td><Badge variant="${getPriorityVariant(issue.priority)}">${issue.priority}</Badge></td>
+          <td>${issue.status}</td>
           <td>
-            <Button class="approve-btn" data-id="${issue.id}">Approve</Button>
-            <Button class="deny-btn" data-id="${issue.id}">Deny</Button>
+            <Button variant="outline" size="sm" class="mr-2" onclick="resolveIssue(${issue.id})">Resolve</Button>
+            <Button variant="outline" size="sm">View Details</Button>
           </td>
         </tr>
       `,
 				)
 				.join("");
-
-			addButtonListeners();
 		} catch (error) {
 			console.error("Error loading pending issues:", error);
-			pendingIssuesTableBody.innerHTML =
-				'<tr><td colspan="7">Error loading pending issues</td></tr>';
+			issuesTableBody.innerHTML =
+				'<tr><td colspan="8">Error loading pending issues</td></tr>';
 		}
 	}
 
-	function addButtonListeners() {
-		document.querySelectorAll(".approve-btn").forEach((btn) => {
-			btn.addEventListener("click", async () => {
-				const target = event.currentTarget as HTMLButtonElement;
-				const issueId = target.dataset.id;
-				try {
-					await approveIssue(issueId);
-					loadPendingIssues();
-				} catch (error) {
-					console.error("Error approving issue:", error);
-				}
-			});
-		});
+	function getPriorityVariant(priority) {
+		switch (priority.toLowerCase()) {
+			case "high":
+				return "destructive";
+			case "medium":
+				return "warning";
+			case "low":
+				return "secondary";
+			default:
+				return "default";
+		}
+	}
 
-		document.querySelectorAll(".deny-btn").forEach((btn) => {
-			btn.addEventListener("click", async () => {
-				const target = event.currentTarget as HTMLButtonElement;
-				const issueId = target.dataset.id;
-				try {
-					await denyIssue(issueId);
-					loadPendingIssues();
-				} catch (error) {
-					console.error("Error denying issue:", error);
-				}
-			});
-		});
+	async function resolveIssue(issueId) {
+		try {
+			await updateIssueStatus(issueId, "resolved");
+			loadPendingIssues();
+		} catch (error) {
+			console.error("Error resolving issue:", error);
+			alert("Error resolving issue. Please try again.");
+		}
 	}
 
 	loadPendingIssues();

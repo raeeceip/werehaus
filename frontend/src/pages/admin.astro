@@ -1,8 +1,12 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import { Button } from "../../@/components/ui/button";
-import { Input } from "../../@/components/ui/input";
-import { Label } from "../../@/components/ui/label";
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+} from "../../@/components/ui/card";
 import {
 	Table,
 	TableBody,
@@ -11,46 +15,117 @@ import {
 	TableHeader,
 	TableRow,
 } from "../../@/components/ui/table";
+import { Badge } from "../../@/components/ui/badge";
 ---
 
-<Layout>
-	<h1 class="text-3xl font-bold mb-4">Admin Dashboard</h1>
-
-	<div class="mb-8">
-		<h2 class="text-2xl font-semibold mb-2">Create New User</h2>
-		<form id="createUserForm" class="space-y-4 max-w-md">
+<Layout title="Admin Dashboard">
+	<div class="container mx-auto py-10">
+		<h1 class="text-3xl font-bold mb-6">Admin Dashboard</h1>
+		<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+			<Card>
+				<CardHeader>
+					<CardTitle>Total Users</CardTitle>
+				</CardHeader>
+				<CardContent>
+					<p class="text-3xl font-bold">256</p>
+				</CardContent>
+			</Card>
+			<Card>
+				<CardHeader>
+					<CardTitle>Active Sessions</CardTitle>
+				</CardHeader>
+				<CardContent>
+					<p class="text-3xl font-bold">42</p>
+				</CardContent>
+			</Card>
+			<Card>
+				<CardHeader>
+					<CardTitle>System Health</CardTitle>
+				</CardHeader>
+				<CardContent>
+					<Badge variant="success">Good</Badge>
+				</CardContent>
+			</Card>
+		</div>
+		<div class="space-y-6">
 			<div>
-				<Label htmlFor="username">Username</Label>
-				<Input type="text" id="username" name="username" required />
+				<h2 class="text-2xl font-bold mb-4">Recent User Activity</h2>
+				<Table>
+					<TableHeader>
+						<TableRow>
+							<TableHead>User</TableHead>
+							<TableHead>Action</TableHead>
+							<TableHead>Timestamp</TableHead>
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						<TableRow>
+							<TableCell>john.doe@example.com</TableCell>
+							<TableCell>Updated inventory</TableCell>
+							<TableCell>2023-06-15 14:30:22</TableCell>
+						</TableRow>
+						<TableRow>
+							<TableCell>jane.smith@example.com</TableCell>
+							<TableCell>Generated report</TableCell>
+							<TableCell>2023-06-15 13:45:10</TableCell>
+						</TableRow>
+						<TableRow>
+							<TableCell>admin@example.com</TableCell>
+							<TableCell>Added new user</TableCell>
+							<TableCell>2023-06-15 12:15:45</TableCell>
+						</TableRow>
+					</TableBody>
+				</Table>
 			</div>
 			<div>
-				<Label htmlFor="password">Password</Label>
-				<Input type="password" id="password" name="password" required />
+				<h2 class="text-2xl font-bold mb-4">System Logs</h2>
+				<Table>
+					<TableHeader>
+						<TableRow>
+							<TableHead>Timestamp</TableHead>
+							<TableHead>Level</TableHead>
+							<TableHead>Message</TableHead>
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						<TableRow>
+							<TableCell>2023-06-15 15:00:01</TableCell>
+							<TableCell><Badge>INFO</Badge></TableCell>
+							<TableCell
+								>Daily backup completed successfully</TableCell
+							>
+						</TableRow>
+						<TableRow>
+							<TableCell>2023-06-15 14:55:30</TableCell>
+							<TableCell
+								><Badge variant="warning">WARN</Badge
+								></TableCell
+							>
+							<TableCell>High CPU usage detected</TableCell>
+						</TableRow>
+						<TableRow>
+							<TableCell>2023-06-15 14:30:15</TableCell>
+							<TableCell
+								><Badge variant="destructive">ERROR</Badge
+								></TableCell
+							>
+							<TableCell
+								>Failed to connect to external API</TableCell
+							>
+						</TableRow>
+					</TableBody>
+				</Table>
 			</div>
-			<div>
-				<Label htmlFor="isAdmin">
-					<Input type="checkbox" id="isAdmin" name="isAdmin" />
-					Is Admin
-				</Label>
+		</div>
+		<div class="mt-8">
+			<h2 class="text-2xl font-bold mb-4">Quick Actions</h2>
+			<div class="flex flex-wrap gap-4">
+				<Button>Manage Users</Button>
+				<Button>System Settings</Button>
+				<Button>View All Logs</Button>
+				<Button variant="destructive">Clear Cache</Button>
 			</div>
-			<Button type="submit">Create User</Button>
-		</form>
-	</div>
-
-	<div>
-		<h2 class="text-2xl font-semibold mb-2">User List</h2>
-		<Table>
-			<TableHeader>
-				<TableRow>
-					<TableHead>ID</TableHead>
-					<TableHead>Username</TableHead>
-					<TableHead>Is Admin</TableHead>
-				</TableRow>
-			</TableHeader>
-			<TableBody id="userTableBody">
-				<!-- Users will be loaded here -->
-			</TableBody>
-		</Table>
+		</div>
 	</div>
 </Layout>
 
@@ -87,12 +162,12 @@ import {
 			userTableBody.innerHTML = users
 				.map(
 					(user) => `
-                <tr>
-                    <td>${user.id}</td>
-                    <td>${user.username}</td>
-                    <td>${user.isAdmin ? "Yes" : "No"}</td>
-                </tr>
-            `,
+            <tr>
+                <td>${user.id}</td>
+                <td>${user.username}</td>
+                <td>${user.isAdmin ? "Yes" : "No"}</td>
+            </tr>
+        `,
 				)
 				.join("");
 		} catch (error) {

@@ -2,7 +2,6 @@
 import Layout from "../layouts/Layout.astro";
 import { Button } from "../../@/components/ui/button";
 import { Input } from "../../@/components/ui/input";
-import { Label } from "../../@/components/ui/label";
 import {
 	Table,
 	TableBody,
@@ -11,122 +10,92 @@ import {
 	TableHeader,
 	TableRow,
 } from "../../@/components/ui/table";
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+} from "../../@/components/ui/card";
+import { PlusIcon, SearchIcon } from "lucide-react";
 ---
 
-<Layout>
-	<h1 class="text-3xl font-bold mb-4">Locations</h1>
-
-	<Button id="openModalBtn">Add New Location</Button>
-
-	<div
-		id="locationModal"
-		class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden"
-	>
-		<div class="bg-white p-6 rounded-lg max-w-md w-full">
-			<h2 class="text-2xl font-bold mb-4">Add New Location</h2>
-			<form id="new-location-form" class="space-y-4">
-				<div>
-					<Label htmlFor="locationName">Location Name</Label>
-					<Input type="text" id="locationName" name="name" required />
-				</div>
-				<div>
-					<Label htmlFor="locationCapacity">Capacity</Label>
-					<Input
-						type="number"
-						id="locationCapacity"
-						name="capacity"
-						required
-						min="0"
-					/>
-				</div>
-				<div class="flex justify-end space-x-2">
-					<Button type="button" id="closeModalBtn" variant="outline"
-						>Cancel</Button
-					>
-					<Button type="submit">Add Location</Button>
-				</div>
-			</form>
-		</div>
-	</div>
-
-	<div class="mt-6">
-		<Table>
-			<TableHeader>
-				<TableRow>
-					<TableHead>Name</TableHead>
-					<TableHead>Capacity</TableHead>
-					<TableHead>Actions</TableHead>
-				</TableRow>
-			</TableHeader>
-			<TableBody id="locationsTableBody">
-				<!-- Locations will be loaded here -->
-			</TableBody>
-		</Table>
-	</div>
-</Layout>
-
-<script>
-	import { createLocation, fetchLocations } from "../lib/api";
-
-	const openModalBtn = document.getElementById("openModalBtn");
-	const closeModalBtn = document.getElementById("closeModalBtn");
-	const locationModal = document.getElementById("locationModal");
-	const newLocationForm = document.getElementById(
-		"new-location-form",
-	) as HTMLFormElement;
-	const locationsTableBody = document.getElementById("locationsTableBody");
-
-	openModalBtn.addEventListener("click", () => {
-		locationModal.classList.remove("hidden");
-	});
-
-	closeModalBtn.addEventListener("click", () => {
-		locationModal.classList.add("hidden");
-	});
-
-	newLocationForm.addEventListener("submit", async (e) => {
-		e.preventDefault();
-		const formData = new FormData(newLocationForm);
-		const newLocation = Object.fromEntries(formData.entries());
-
-		try {
-			await createLocation(newLocation);
-			locationModal.classList.add("hidden");
-			newLocationForm.reset();
-			loadLocations();
-		} catch (error) {
-			console.error("Error creating location:", error);
-			alert("Error creating location. Please try again.");
-		}
-	});
-
-	async function loadLocations() {
-		try {
-			const locations = await fetchLocations();
-			locationsTableBody.innerHTML = locations
-				.map(
-					(location) => `
-				<tr>
-					<td>${location.name}</td>
-					<td>${location.capacity}</td>
-					<td>
-						<button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2">
-							Edit
-						</button>
-						<button class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
-							Delete
-						</button>
-					</td>
-				</tr>
-			`,
-				)
-				.join("");
-		} catch (error) {
-			console.error("Error loading locations:", error);
-			locationsTableBody.innerHTML =
-				'<tr><td colspan="3">Error loading locations</td></tr>';
-		}
-	}
-
-	loadLocations();
-</script>
+<div class="container mx-auto py-10">
+	<Layout title="Warehouse Locations">
+		<div class="container mx-auto py-10">
+			<h1 class="text-2xl font-bold mb-5">Warehouse Locations</h1>
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+				<Card>
+					<CardHeader>
+						<CardTitle>Total Locations</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<p class="text-3xl font-bold" id="totalLocations">
+							Loading...
+						</p>
+					</CardContent>
+				</Card>
+				<Card>
+					<CardHeader>
+						<CardTitle>Available Spaces</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<p class="text-3xl font-bold" id="availableSpaces">
+							Loading... ...
+						</p>
+					</CardContent>
+				</Card>
+				<Card>
+					<CardHeader />
+					<div class="flex justify-between mb-4">
+						<div class="relative w-64">
+							<SearchIcon
+								class="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground"
+							/>
+							<Input
+								placeholder="Search locations"
+								class="pl-8"
+							/>
+						</div>
+						<Button>
+							<PlusIcon class="mr-2 h-4 w-4" /> Add New Location
+						</Button>
+					</div>
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead>Location ID</TableHead>
+								<TableHead>Name</TableHead>
+								<TableHead>Type</TableHead>
+								<TableHead>Capacity</TableHead>
+								<TableHead>Occupied</TableHead>
+								<TableHead>Actions</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							<TableRow>
+								<TableCell>A1</TableCell>
+								<TableCell>Shelf A1</TableCell>
+								<TableCell>Shelf</TableCell>
+								<TableCell>100</TableCell>
+								<TableCell>75</TableCell>
+								<TableCell>
+									<Button
+										variant="outline"
+										size="sm"
+										class="mr-2">Edit</Button
+									>
+									<Button variant="outline" size="sm"
+										>View Items</Button
+									>
+								</TableCell>
+							</TableRow>
+						</TableBody>
+					</Table>
+				</Card>
+				<script>
+					import { createLocation, fetchLocations } from "../lib/api";
+					import { createLocation, fetchLocations } from "../lib/api";
+				</script>
+			</div>
+		</div></Layout>
+</div>
