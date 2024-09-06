@@ -8,15 +8,75 @@ import (
 	"go-warehouse-management/internal/models"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func LoginHandler(c *gin.Context) {
-	// TODO: Implement login logic
-	c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
+	var loginRequest struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+
+	if err := c.ShouldBindJSON(&loginRequest); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	user, err := database.GetUserByUsername(loginRequest.Username)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginRequest.Password)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		return
+	}
+
+	// TODO: Implement proper session management or JWT token generation here
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Login successful"})
+}
+
+func SignupHandler(c *gin.Context) {
+	var signupRequest struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+
+	if err := c.ShouldBindJSON(&signupRequest); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Check if user already exists
+	existingUser, _ := database.GetUserByUsername(signupRequest.Username)
+	if existingUser != nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
+		return
+	}
+
+	// Create new user
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(signupRequest.Password), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error hashing password"})
+		return
+	}
+
+	newUser := &models.User{
+		Username: signupRequest.Username,
+		Password: string(hashedPassword),
+	}
+
+	if err := database.CreateUser(newUser); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating user"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"success": true, "message": "User created successfully"})
 }
 
 func LogoutHandler(c *gin.Context) {
-	// TODO: Implement logout logic
+	// TODO: Implement logout logic (e.g., invalidate session or JWT token)
 	c.JSON(http.StatusOK, gin.H{"message": "Logout successful"})
 }
 
