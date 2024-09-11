@@ -12,7 +12,7 @@ import expenseRoutes from "./routes/expenseRoutes";
 
 /* CONFIGURATIONS */
 dotenv.config();
-const app = express();
+export const app = express();
 app.use(express.json());
 app.use(helmet());
 app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
@@ -28,6 +28,7 @@ app.use("/users", userRoutes); // http://localhost:8000/users
 app.use("/expenses", expenseRoutes); // http://localhost:8000/expenses
 
 /* SERVER */
+
 const port = Number(process.env.PORT) || 8000;
 app.listen(port, "0.0.0.0", () => {
   console.log(`Server running on port ${port}`);
